@@ -673,7 +673,7 @@
                     )}
 
                     {/* Envelope Letter Modal */}
-                    {showLetter && <EnvelopeMessage onClose={() => setShowLetter(false)} />}
+                    {showLetter && <EnvelopeMessage onClose={() => setShowLetter(false)} audioRef={audioRef} setIsPlaying={setIsPlaying} />}
                     <MiniMessages />
                     <BotChat />
 
@@ -883,15 +883,23 @@
             return <span>{displayed}</span>;
         }
 
-        function EnvelopeMessage({ onClose }) {
+        function EnvelopeMessage({ onClose, audioRef, setIsPlaying }) {
             const [isOpened, setIsOpened] = useState(false);
             const [showFullLetter, setShowFullLetter] = useState(false);
             const [paraDone, setParaDone] = useState([false, false]);
             const letterRef = useRef(null);
+            const [autoPlayed, setAutoPlayed] = useState(false);
 
             useEffect(() => {
                 const timer1 = setTimeout(() => setIsOpened(true), 1500);
-                const timer2 = setTimeout(() => setShowFullLetter(true), 3000);
+                const timer2 = setTimeout(() => {
+                    setShowFullLetter(true);
+                    if (audioRef?.current && !autoPlayed) {
+                        audioRef.current.play().catch(e => console.log(e));
+                        if (setIsPlaying) setIsPlaying(true);
+                        setAutoPlayed(true);
+                    }
+                }, 3000);
                 return () => { clearTimeout(timer1); clearTimeout(timer2); };
             }, []);
 

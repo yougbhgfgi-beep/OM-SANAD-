@@ -701,7 +701,7 @@
                                 <div key={i} className={`flex mb-24 flex-col md:flex-row ${i % 2 === 0 ? 'md:flex-row-reverse' : ''} items-center group`}>
                                     <div className="md:w-1/2 flex justify-center">
                                         <div className="w-64 h-80 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-slate-800 timeline-img bg-slate-900 timeline-img-container shadow-[0_0_30px_rgba(0,0,0,0.6)]">
-                                            <img src={item.img} className="w-full h-full object-cover opacity-90" alt="Memory" />
+                                            <img src={item.img} className="w-full h-full object-contain opacity-90" alt="Memory" />
                                         </div>
                                     </div>
                                     <div className="z-10 bg-rose-500 w-8 h-8 rounded-full border-4 border-slate-900 shadow-[0_0_15px_rgba(225,29,72,0.5)] my-6 md:my-0 group-hover:scale-125 transition-transform"></div>
@@ -861,15 +861,57 @@
             );
         }
 
+        function TypewriterText({ text, speed = 15, onDone }) {
+            const [displayed, setDisplayed] = useState("");
+            const idx = useRef(0);
+
+            useEffect(() => {
+                idx.current = 0;
+                setDisplayed("");
+                const interval = setInterval(() => {
+                    if (idx.current < text.length) {
+                        setDisplayed(text.slice(0, idx.current + 1));
+                        idx.current++;
+                    } else {
+                        clearInterval(interval);
+                        onDone?.();
+                    }
+                }, speed);
+                return () => clearInterval(interval);
+            }, [text, speed]);
+
+            return <span>{displayed}</span>;
+        }
+
         function EnvelopeMessage({ onClose }) {
             const [isOpened, setIsOpened] = useState(false);
             const [showFullLetter, setShowFullLetter] = useState(false);
+            const [paraDone, setParaDone] = useState([false, false, false, false, false]);
+            const [showClose, setShowClose] = useState(false);
+            const letterRef = useRef(null);
 
             useEffect(() => {
                 const timer1 = setTimeout(() => setIsOpened(true), 1500);
                 const timer2 = setTimeout(() => setShowFullLetter(true), 3000);
                 return () => { clearTimeout(timer1); clearTimeout(timer2); };
             }, []);
+
+            const paragraphs = [
+                `فاكره لما كنتي ماشيه معايا واترميتي في حضني؟ اهو ساعتها انا حسيت بأمان مش طبيعي حسيت بحبك. ولا فاكره لما جرينا انا وانتي، وجودي كانت معانا؟ فاكره لما حضنتي ايدي ولا لما اتمشينا وجبتلك الخاتم اللي نفسك فيه؟ اهو دلوقتي دي برضو كنتي عامله عليها ريبوست وانا مقدرش اخلي نفسك في حاجه. انا عندي استعداد افضل احاول عشانك في سبيل اني اشوف ضحكتك واشوفك مبسوطه.`,
+                `بحبك وبحب حبي ليكي وبحب كل تفصيله فيكي، بحب عيونك اللي بتسحرني وحبك اللي بيخليني احسن بكتيرررر. انا بوعدك أن عمري ما هكون لغيرك ومش هسيبك لغيري.`,
+                `عارف انك تايهه دلوقتي ومش عارفه تاخدي قرار بس انا جمبك لغاية ما تفوقي ومش هسيبك لوحدك، ولا هسمح لاي حد ياخدك مني انتي بتاعتي انا وبس. كتبت كل باسوردات اكونتاتي باسمك وبتمنى متخلصش كدة لان حبي ليكي عمره ما هيخلص ولا هيقل وهيفضل يزيد.`,
+                `انا فاكر كل كلمة اتقالت في الفويس السبع دقايق وفاكر كل حاجه حصلت ومحدش فينا ملوش ماضي وانا جمبك وهنتخطى خوفك من الماضي وهوريكي أن مش كلنا زي بعض، انا هعرفك معنى الحب بجد.`,
+                `بقيت حافظ كل كلامك، عندك مثلا كلمة "تحفه" 😂، و"همنمنم" اللي بتقوليها! ببقى مبسوط اوي لما تقولي احكيلي تفاصيل يومك، ببقى مبسوط اوي وانتي معايا عمتا. انا واثق فيكي وفي حبي ليكي وعمري ما هسمح لحاجه تأثر علينا يا وشا وجوجتي وكل حاجه في حياتي واجمل حاجه حصلتلي ❤️`
+            ];
+
+            useEffect(() => {
+                if (showFullLetter && letterRef.current) {
+                    const timer = setTimeout(() => {
+                        letterRef.current.scrollTo({ top: letterRef.current.scrollHeight, behavior: 'smooth' });
+                    }, 100);
+                    return () => clearTimeout(timer);
+                }
+            }, [paraDone]);
 
             return (
                 <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 md:p-6 overflow-y-auto animate-fade-in">
@@ -899,19 +941,29 @@
                             )}
                         </div>
                     ) : (
-                        <div className="bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] w-[95%] md:w-full max-w-3xl p-6 md:p-12 shadow-[0_0_60px_rgba(244,63,94,0.3)] text-right border border-rose-500/30 animate-fade-in relative z-50 my-auto max-h-[90vh] overflow-y-auto custom-scrollbar" dir="rtl">
-                            <Heart size={60} fill="#f43f5e" className="text-rose-500 mx-auto mb-6 animate-pulse drop-shadow-md" />
+                        <div ref={letterRef} className="bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] w-[95%] md:w-full max-w-3xl p-6 md:p-12 shadow-[0_0_60px_rgba(244,63,94,0.3)] text-right border border-rose-500/30 animate-fade-in relative z-50 my-auto max-h-[90vh] overflow-y-auto custom-scrollbar" dir="rtl">
+                            <div className="text-center mb-6">
+                                <Heart size={60} fill="#f43f5e" className="text-rose-500 mx-auto animate-pulse drop-shadow-md inline-block" />
+                            </div>
                             <h2 className="text-4xl text-center font-bold mb-8 text-rose-400 border-b border-slate-700 pb-4 font-script">رسالة من قلبي ❤️</h2>
                             <div className="text-lg md:text-xl leading-relaxed text-slate-300 space-y-4 md:space-y-6 font-medium">
-                                <p>فاكره لما كنتي ماشيه معايا واترميتي في حضني؟ اهو ساعتها انا حسيت بأمان مش طبيعي حسيت بحبك. ولا فاكره لما جرينا انا وانتي، وجودي كانت معانا؟ فاكره لما حضنتي ايدي ولا لما اتمشينا وجبتلك الخاتم اللي نفسك فيه؟ اهو دلوقتي دي برضو كنتي عامله عليها ريبوست وانا مقدرش اخلي نفسك في حاجه. انا عندي استعداد افضل احاول عشانك في سبيل اني اشوف ضحكتك واشوفك مبسوطه.</p>
-                                <p>بحبك وبحب حبي ليكي وبحب كل تفصيله فيكي، بحب عيونك اللي بتسحرني وحبك اللي بيخليني احسن بكتيرررر. انا بوعدك أن عمري ما هكون لغيرك ومش هسيبك لغيري.</p>
-                                <p>عارف انك تايهه دلوقتي ومش عارفه تاخدي قرار بس انا جمبك لغاية ما تفوقي ومش هسيبك لوحدك، ولا هسمح لاي حد ياخدك مني انتي بتاعتي انا وبس. كتبت كل باسوردات اكونتاتي باسمك وبتمنى متخلصش كدة لان حبي ليكي عمره ما هيخلص ولا هيقل وهيفضل يزيد.</p>
-                                <p>انا فاكر كل كلمة اتقالت في الفويس السبع دقايق وفاكر كل حاجه حصلت ومحدش فينا ملوش ماضي وانا جمبك وهنتخطى خوفك من الماضي وهوريكي أن مش كلنا زي بعض، انا هعرفك معنى الحب بجد.</p>
-                                <p>بقيت حافظ كل كلامك، عندك مثلا كلمة "تحفه" 😂، و"همنمنم" اللي بتقوليها! ببقى مبسوط اوي لما تقولي احكيلي تفاصيل يومك، ببقى مبسوط اوي وانتي معايا عمتا. انا واثق فيكي وفي حبي ليكي وعمري ما هسمح لحاجه تأثر علينا يا وشا وجوجتي وكل حاجه في حياتي واجمل حاجه حصلتلي ❤️</p>
+                                {paragraphs.map((para, i) => (
+                                    <p key={i} className="min-h-[1.2em]">
+                                        {(i === 0 || paraDone[i - 1]) && (
+                                            <TypewriterText
+                                                text={para}
+                                                speed={10}
+                                                onDone={() => setParaDone(prev => { const n = [...prev]; n[i] = true; return n; })}
+                                            />
+                                        )}
+                                    </p>
+                                ))}
                             </div>
-                            <div className="mt-8 md:mt-12 flex justify-center pb-2 md:pb-4">
-                                <button onClick={onClose} className="bg-gradient-to-r from-rose-500 to-indigo-600 text-white px-10 md:px-14 py-3 md:py-4 rounded-full shadow-[0_0_30px_rgba(244,63,94,0.5)] hover:scale-110 transition-transform font-bold text-lg md:text-xl border border-white/20">بختمها بحبك ❤️</button>
-                            </div>
+                            {paraDone.every(Boolean) && (
+                                <div className="mt-8 md:mt-12 flex justify-center pb-2 md:pb-4 animate-fade-in">
+                                    <button onClick={onClose} className="bg-gradient-to-r from-rose-500 to-indigo-600 text-white px-10 md:px-14 py-3 md:py-4 rounded-full shadow-[0_0_30px_rgba(244,63,94,0.5)] hover:scale-110 transition-transform font-bold text-lg md:text-xl border border-white/20">بختمها بحبك ❤️</button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
